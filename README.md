@@ -10,6 +10,8 @@ A browser-based PDF editor built with React + Vite. Everything runs on the clien
 | **Reorder** | Drag thumbnails, or use the up/down (left/right in grid view) buttons. Works on multi-selections. |
 | **Delete** | Select pages, press the Delete button or the `Delete` key. |
 | **Insert image on a page** | `Insert image` → the image appears on the current page. Drag to move, drag a corner to resize (aspect ratio locked), opacity slider, `Remove image`. |
+| **Add text** | `Add text` → a text box appears on the current page, ready to type. Press `Esc` (or click away) to finish; double-click a box to edit it again; drag to move. The bar above the page sets font (Sans / Serif / Mono), size, bold, italic, alignment, colour and opacity. Hindi / Devanagari and `₹` work automatically. |
+| **Cover existing content** | `Cover` adds a coloured box (white by default) you can move and resize. Put it over old text, then type the new text on top. This is how you "edit" text that is already in a PDF. |
 | **Images as pages** | Drop PNG/JPEG/WebP/GIF/SVG files anywhere; each becomes its own page. |
 | Rotate, duplicate, blank page | Action bar. Works on the selection. |
 | Save selection only | Select some pages, then `Save n selected`. |
@@ -24,7 +26,7 @@ Selecting pages: click, `Ctrl/Cmd`-click to add, `Shift`-click for a range, `Ctr
 npm install
 npm run dev        # http://localhost:5173
 npm run build      # static site in dist/ (host anywhere)
-npm test           # export pipeline tests
+npm test           # export pipeline tests (needs poppler's pdftoppm for the rendering checks; they are skipped without it)
 ```
 
 Node 18+ is required.
@@ -35,6 +37,7 @@ Node 18+ is required.
 - **pdf-lib** builds the output PDF: `copyPages` for merge/reorder/delete, `drawImage` for inserted images, `setRotation` for rotation.
 - The editor keeps a simple list of page records (`src/App.jsx`). Nothing is written to the PDF until you download, so undo/redo is just swapping lists (`src/lib/history.js`).
 - Image positions are stored as fractions of the page, measured on the page *as displayed*. `overlayPlacement()` in `src/lib/exportPdf.js` converts them to PDF coordinates for pages that have their own `/Rotate` value.
+- Text is embedded as real, selectable text with subset fonts (the same Noto font files are used for the preview and for the PDF, so line breaks and positions match). Hindi shaping is done by `@pdf-lib/fontkit`.
 - Images that pdf-lib cannot embed (WebP, GIF, SVG…) are converted to PNG in the browser. Phone photos with EXIF rotation are re-encoded so they are not sideways.
 
 ```
@@ -44,8 +47,10 @@ src/
   lib/exportPdf.js      builds the final PDF (no DOM, covered by tests)
   lib/pdfjs.js          page rendering
   lib/image.js          image preparation
+  lib/fonts.js          font catalogue + script splitting (shared by preview and export)
+  lib/fontsCss.js       @font-face rules and font loading for the browser
   lib/history.js        undo/redo reducer
-test/export.test.mjs    merge/reorder/delete/rotate checks + rendering checks via poppler (pdftoppm)
+test/export.test.mjs    merge/reorder/delete/rotate, images, text and cover boxes on every page rotation (rendered with poppler)
 ```
 
 ## Limitations
@@ -54,4 +59,10 @@ test/export.test.mjs    merge/reorder/delete/rotate checks + rendering checks vi
 - Interactive **form fields** are not carried over when pages are copied. Links and visual content are.
 - Inserted images are flattened into the page: after download they are normal page content, not editable objects. Keep working in the editor until you are done.
 - Large PDFs (hundreds of pages / hundreds of MB) depend on the browser's memory. Thumbnails render progressively.
-- Text editing is not included.
+- **Existing text cannot be edited in place.** PDFs do not store text as editable paragraphs, so changing it means covering it (`Cover`) and typing over it. Covered text is hidden, **not removed**: it can still be selected or copied from the file, so do not use this to redact secrets.
+- Text boxes support Latin and Devanagari scripts (Noto Sans / Serif / Mono, bundled). Other scripts (Chinese, Arabic, emoji…) will show missing-glyph boxes; add more fonts in `src/lib/fonts.js`.
+- Text boxes have no automatic wrapping: press Enter for a new line. This keeps the editor and the exported PDF identical.
+
+## Fonts
+
+Noto Sans, Noto Serif, Noto Sans Mono and Noto Sans Devanagari come from the `@fontsource/*` packages and are licensed under the SIL Open Font License. `npm run dev` / `npm run build` copy the needed files into `public/fonts/`.

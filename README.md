@@ -1,5 +1,5 @@
 # PDF Editor
-
+Browser Based Pdf editor
 A browser-based PDF editor built with React + Vite. Everything runs on the client, so files are never uploaded.
 
 ## Features

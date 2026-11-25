@@ -62,7 +62,7 @@ test/export.test.mjs    merge/reorder/delete/rotate, images, text and cover boxe
 - **Existing text cannot be edited in place.** PDFs do not store text as editable paragraphs, so changing it means covering it (`Cover`) and typing over it. Covered text is hidden, **not removed**: it can still be selected or copied from the file, so do not use this to redact secrets.
 - Text boxes support Latin and Devanagari scripts (Noto Sans / Serif / Mono, bundled). Other scripts (Chinese, Arabic, emoji…) will show missing-glyph boxes; add more fonts in `src/lib/fonts.js`.
 - Text boxes have no automatic wrapping: press Enter for a new line. This keeps the editor and the exported PDF identical.
-
+Built with react
 ## Fonts
 
 Noto Sans, Noto Serif, Noto Sans Mono and Noto Sans Devanagari come from the `@fontsource/*` packages and are licensed under the SIL Open Font License. `npm run dev` / `npm run build` copy the needed files into `public/fonts/`.
